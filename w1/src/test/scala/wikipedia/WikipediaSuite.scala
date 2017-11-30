@@ -116,8 +116,8 @@ class WikipediaSuite extends FunSuite with BeforeAndAfterAll {
       )
     val rdd = sc.parallelize(articles)
     val index = makeIndex(langs, rdd)
-    val res = index.count() == 2
-    assert(res)
+    val res = index.count();
+    assert(res == 2)
   }
 
   test("'rankLangsUsingIndex' should work for a simple RDD with three elements") {
