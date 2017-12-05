@@ -1,5 +1,7 @@
 package wikipedia
 
+import java.util.stream.Collectors
+
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
@@ -32,7 +34,7 @@ object WikipediaRanking {
    */
   def occurrencesOfLang(lang: String, rdd: RDD[WikipediaArticle]): Int = {
     val i = rdd.aggregate(0)((acc, el) => (acc + (if (el.mentionsLanguage(lang)) 1 else 0)), (x, y) => {
-      println("The x: " + x); println("The y: " + y); println(x + y); x + y
+       x + y
     })
     i;
   }
@@ -58,11 +60,7 @@ object WikipediaRanking {
         wa.mentionsLanguage(lang)
       }).map((_, wa))
     })
-    println("mapped")
-    map.collect().foreach(println(_));
     val key: RDD[(String, Iterable[WikipediaArticle])] = map.groupByKey()
-    println("grouped")
-    key.collect().foreach(println(_));
     return key;
   }
 
@@ -72,7 +70,9 @@ object WikipediaRanking {
    *   Note: this operation is long-running. It can potentially run for
    *   several seconds.
    */
-  def rankLangsUsingIndex(index: RDD[(String, Iterable[WikipediaArticle])]): List[(String, Int)] = ???
+  def rankLangsUsingIndex(index: RDD[(String, Iterable[WikipediaArticle])]): List[(String, Int)] = {
+    return index.groupBy(_._1).mapValues(_.map(_._2.size).head).collect().toList.sortWith(_._2 > _._2);
+  }
 
   /* (3) Use `reduceByKey` so that the computation of the index and the ranking are combined.
    *     Can you notice an improvement in performance compared to measuring *both* the computation of the index
@@ -81,10 +81,13 @@ object WikipediaRanking {
    *   Note: this operation is long-running. It can potentially run for
    *   several seconds.
    */
-  def rankLangsReduceByKey(langs: List[String], rdd: RDD[WikipediaArticle]): List[(String, Int)] = ???
+  def rankLangsReduceByKey(langs: List[String], rdd: RDD[WikipediaArticle]): List[(String, Int)] = {
+    val value = rdd.flatMap(elem => langs.flatMap((lang) => {if(elem.mentionsLanguage(lang)) List((lang, 1)) else List()})).reduceByKey(_+_).collect().toList.sortWith(_._2 > _._2);
+    value.foreach(println _)
+    return value;
+  }
 
   def main(args: Array[String]) {
-println("dupadupa");
     /* Languages ranked according to (1) */
     val langsRanked: List[(String, Int)] = timed("Part 1: naive ranking", rankLangs(langs, wikiRdd))
 
