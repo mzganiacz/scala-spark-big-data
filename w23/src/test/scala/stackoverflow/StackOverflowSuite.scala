@@ -35,4 +35,14 @@ class StackOverflowSuite extends FunSuite with BeforeAndAfterAll {
   }
 
 
+  test("should group postings") {
+    val overflow = new StackOverflow()
+    val value = overflow.groupedPostings(overflow.rawPostings(StackOverflow.loadLines()))
+    val tuples = value.take(100)
+    tuples.foreach(println);
+
+//    assert(instantiatable, "Can't instantiate a StackOverflow object")
+  }
+
+
 }
