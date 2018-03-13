@@ -86,13 +86,27 @@ class StackOverflow extends Serializable {
 
   /** Group the questions and answers together */
   def groupedPostings(postings: RDD[Posting]): RDD[(QID, Iterable[(Question, Answer)])] = {
-    val groupedByKey = postings.map(posting => (posting.parentId.getOrElse(posting.id), posting)).groupByKey()
+    val groupedByKey: RDD[(QID, Iterable[Posting])] = postings.map(posting => (posting.parentId.getOrElse(posting.id), posting)).groupByKey()
     val value: RDD[(QID, (Question, List[Answer]))] = groupedByKey.mapValues(valu => valu.foldLeft((null, List[Answer]()): (Question, List[Answer]))((acc: (Question, List[Answer]), item: Question) =>
       if (item.postingType == 1) (item, acc._2) else (acc._1, acc._2.::(item))
       //(null, null)
     ));
 
     value.mapValues(valu => valu._2.map(answer => (valu._1, answer)));
+  }
+
+  /** Group the questions and answers together */
+  def groupedPostings2(postings: RDD[Posting]): RDD[(QID, Iterable[(Question, Answer)])] = {
+    val questions: RDD[(QID, Question)] = postings.filter(posting => posting.parentId.isEmpty).map(el => (el.id, el));
+    val answers: RDD[(QID, Answer)] = postings.filter(posting => posting.parentId.isDefined).map(el => (el.parentId.orNull, el));
+
+    val tupled: RDD[(QID, (Question, Answer))] = questions.leftOuterJoin(answers).map(el => (el._1, (el._2._1, el._2._2.orNull)));
+    var res: RDD[(QID, Iterable[(Question, Answer)])] = tupled.groupByKey();
+    //    val value: RDD[(QID, (Question, List[Answer]))] = groupedByKey.mapValues(valu => valu.foldLeft((null, List[Answer]()): (Question, List[Answer]))((acc: (Question, List[Answer]), item: Question) =>
+    //      if (item.postingType == 1) (item, acc._2) else (acc._1, acc._2.::(item))
+    //      //(null, null)
+    //    ));
+    return res;
   }
 
   //
