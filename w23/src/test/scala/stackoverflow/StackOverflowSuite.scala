@@ -44,5 +44,15 @@ class StackOverflowSuite extends FunSuite with BeforeAndAfterAll {
 //    assert(instantiatable, "Can't instantiate a StackOverflow object")
   }
 
+  test("should count HighScores") {
+    val overflow = new StackOverflow()
+    val grouped= overflow.groupedPostings(overflow.rawPostings(StackOverflow.loadLines()))
+    val hs = overflow.scoredPostings(grouped);
+    val res = hs.take(100)
+    res.foreach(println);
+
+    //    assert(instantiatable, "Can't instantiate a StackOverflow object")
+  }
+
 
 }

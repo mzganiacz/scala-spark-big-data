@@ -90,7 +90,7 @@ class StackOverflow extends Serializable {
     val value: RDD[(QID, (Question, List[Answer]))] = groupedByKey.mapValues(valu => valu.foldLeft((null, List[Answer]()): (Question, List[Answer]))((acc: (Question, List[Answer]), item: Question) =>
       if (item.postingType == 1) (item, acc._2) else (acc._1, acc._2.::(item))
       //(null, null)
-    ));
+    )).filter(el=>el._2._2.nonEmpty);
 
     value.mapValues(valu => valu._2.map(answer => (valu._1, answer)));
   }
@@ -114,7 +114,11 @@ class StackOverflow extends Serializable {
       var highScore = 0
       var i = 0
       while (i < as.length) {
-        val score = as(i).score
+        val answer = as(i)
+        if (answer == null) {
+          println("answer null for " + i)
+        }
+        val score = answer.score
         if (score > highScore)
           highScore = score
         i += 1
@@ -122,26 +126,10 @@ class StackOverflow extends Serializable {
       highScore
     }
 
-    ???
-  }
-
-
-  /** Compute the vectors for the kmeans */
-  def vectorPostings(scored: RDD[(Posting, Int)]): RDD[(Int, Int)] = {
-
-    def firstLangInTag(tag: String): Option[Int] = {
-      val idx = langs.indexOf(tag)
-      if (idx >= 0) Some(idx) else None
-    }
-
-    val vectors = for {
-      (posting, score) <- scored // generates a `withFilter RDD` warning. See http://stackoverflow.com/questions/28048586/warning-while-using-rdd-in-for-comprehension
-      tag <- posting.tags
-      idx <- firstLangInTag(tag)
-    } yield (idx * langSpread, score)
-
-
-    vectors.persist()
+    return grouped.map(el => {
+      println(el)
+      (el._2.head._1, answerHighScore(el._2.filter(qa => qa._2 != null).map(qa => qa._2).toArray))
+    });
   }
 
 
