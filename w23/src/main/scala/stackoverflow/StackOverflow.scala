@@ -90,7 +90,7 @@ class StackOverflow extends Serializable {
     val value: RDD[(QID, (Question, List[Answer]))] = groupedByKey.mapValues(valu => valu.foldLeft((null, List[Answer]()): (Question, List[Answer]))((acc: (Question, List[Answer]), item: Question) =>
       if (item.postingType == 1) (item, acc._2) else (acc._1, acc._2.::(item))
       //(null, null)
-    )).filter(el=>el._2._2.nonEmpty);
+    )).filter(el => el._2._2.nonEmpty);
 
     value.mapValues(valu => valu._2.map(answer => (valu._1, answer)));
   }
@@ -115,9 +115,6 @@ class StackOverflow extends Serializable {
       var i = 0
       while (i < as.length) {
         val answer = as(i)
-        if (answer == null) {
-          println("answer null for " + i)
-        }
         val score = answer.score
         if (score > highScore)
           highScore = score
@@ -127,7 +124,6 @@ class StackOverflow extends Serializable {
     }
 
     return grouped.map(el => {
-      println(el)
       (el._2.head._1, answerHighScore(el._2.filter(qa => qa._2 != null).map(qa => qa._2).toArray))
     });
   }
@@ -149,7 +145,7 @@ class StackOverflow extends Serializable {
       }
     }
 
-    ???
+    scored.filter(el => el._1.tags.isDefined  && el._2 > 0).map(el => (firstLangInTag(el._1.tags, langs), el._2)).map(el => (el._1.get * langSpread, el._2))
   }
 
 
