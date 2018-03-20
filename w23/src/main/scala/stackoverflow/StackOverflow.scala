@@ -99,9 +99,10 @@ class StackOverflow extends Serializable {
   def groupedPostings(postings: RDD[Posting]): RDD[(QID, Iterable[(Question, Answer)])] = {
     val questions: RDD[(QID, Question)] = postings.filter(posting => posting.parentId.isEmpty).map(el => (el.id, el));
     val answers: RDD[(QID, Answer)] = postings.filter(posting => posting.parentId.isDefined).map(el => (el.parentId.getOrElse(0), el));
-
-    val tupled: RDD[(QID, Iterable[(Question, Answer)])] = questions.leftOuterJoin(answers).map(el => (el._1, List((el._2._1, el._2._2.orNull))));
-    var res: RDD[(QID, Iterable[(Question, Answer)])] = tupled.reduceByKey((accum, n) => accum.++(n));
+    val tupled: RDD[(QID, (Question, Answer))] = questions.join(answers);
+    val aggregate: (List[(Question, Answer)], (Question, Answer)) => List[(Question, Answer)] = (acc: List[(Question, Answer)], v: (Question, Answer)) => acc.::(v)
+    val mergePartitions: (List[(Question, Answer)], List[(Question, Answer)]) => List[(Question, Answer)] = (p1: List[(Question, Answer)], p2: List[(Question, Answer)]) => p1.++(p2);
+    var res: RDD[(QID, Iterable[(Question, Answer)])] = tupled.aggregateByKey(List[(Question, Answer)]())(aggregate, mergePartitions).mapValues((v) => v.toIterable);
     return res;
   }
 
@@ -145,7 +146,7 @@ class StackOverflow extends Serializable {
       }
     }
 
-    scored.filter(el => el._1.tags.isDefined  && el._2 > 0).map(el => (firstLangInTag(el._1.tags, langs), el._2)).map(el => (el._1.get * langSpread, el._2))
+    scored.filter(el => el._1.tags.isDefined && el._2 > 0).map(el => (firstLangInTag(el._1.tags, langs), el._2)).map(el => (el._1.get * langSpread, el._2))
   }
 
 

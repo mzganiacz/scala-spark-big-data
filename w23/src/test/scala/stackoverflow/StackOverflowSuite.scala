@@ -41,7 +41,7 @@ class StackOverflowSuite extends FunSuite with BeforeAndAfterAll {
 
   test("should group postings") {
     val overflow = new StackOverflow()
-    val value = overflow.groupedPostingsBad(overflow.rawPostings(StackOverflow.loadLines()))
+    val value = overflow.groupedPostings(overflow.rawPostings(StackOverflow.loadLines()))
     val tuples = value.take(100)
     tuples.foreach(println);
 
@@ -50,7 +50,7 @@ class StackOverflowSuite extends FunSuite with BeforeAndAfterAll {
 
   test("should count HighScores") {
     val overflow = new StackOverflow()
-    val grouped = overflow.groupedPostingsBad(overflow.rawPostings(StackOverflow.loadLines()))
+    val grouped = overflow.groupedPostings(overflow.rawPostings(StackOverflow.loadLines()))
     val hs = overflow.scoredPostings(grouped);
     val res = hs.take(100)
     res.foreach(println);
