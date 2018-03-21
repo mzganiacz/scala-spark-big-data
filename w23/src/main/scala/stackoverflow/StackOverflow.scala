@@ -124,29 +124,30 @@ class StackOverflow extends Serializable {
       highScore
     }
 
-    return grouped.map(el => {
-      (el._2.head._1, answerHighScore(el._2.filter(qa => qa._2 != null).map(qa => qa._2).toArray))
-    });
+
+        return grouped.map(el => {
+          (el._2.head._1, answerHighScore(el._2.filter(qa => qa._2 != null).map(qa => qa._2).toArray))
+        });
+
   }
 
 
   /** Compute the vectors for the kmeans */
   def vectorPostings(scored: RDD[(Question, HighScore)]): RDD[(LangIndex, HighScore)] = {
     /** Return optional index of first language that occurs in `tags`. */
-    def firstLangInTag(tag: Option[String], ls: List[String]): Option[Int] = {
-      if (tag.isEmpty) None
-      else if (ls.isEmpty) None
-      else if (tag.get == ls.head) Some(0) // index: 0
-      else {
-        val tmp = firstLangInTag(tag, ls.tail)
-        tmp match {
-          case None => None
-          case Some(i) => Some(i + 1) // index i in ls.tail => index i+1
+        def firstLangInTag(tag: Option[String], ls: List[String]): Option[Int] = {
+          if (tag.isEmpty) None
+          else if (ls.isEmpty) None
+          else if (tag.get == ls.head) Some(0) // index: 0
+          else {
+            val tmp = firstLangInTag(tag, ls.tail)
+            tmp match {
+              case None => None
+              case Some(i) => Some(i + 1) // index i in ls.tail => index i+1
+            }
+          }
         }
-      }
-    }
-
-    scored.filter(el => el._1.tags.isDefined && el._2 > 0).map(el => (firstLangInTag(el._1.tags, langs), el._2)).map(el => (el._1.get * langSpread, el._2))
+        scored.filter(el => el._1.tags.isDefined).map(el => (firstLangInTag(el._1.tags, langs), el._2)).map(el => (el._1.get * langSpread, el._2))
   }
 
 
